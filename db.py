@@ -4,6 +4,8 @@ import certifi
 import os
 from dotenv import load_dotenv
 
-uri = os.getenv("MONGO_URI")
-client = MongoClient(uri, server_api=ServerApi('1'), tlsCAFile=certifi.where())
-db = client['my_db']
+load_dotenv('.env')
+
+uri=os.getenv('MONGO_URI')
+client=MongoClient(uri, server_api=ServerApi('1'), tlsCAFile=certifi.where())
+db=client['my_db']
