@@ -45,11 +45,38 @@ class Tasks:
         return [{**task, "_id": str(task["_id"])} for task in Tasks], 200
     
     # Get task by ID
-    
+
     def get_task(self, task_id):
         task = redisClient.json().get(task_id)
         if not task or not task["_id"]:
             task = tasks.find_one({'_id': ObjectId(task_id)})
         if task:
             return {**task, "_id": str(task["_id"])}, 200
+        return jsonify({'message': 'Task not found'}), 404
+    
+    # Update task 
+
+    def update_task(self, task_id):
+        task_data = request.json
+        if 'assignee' not in task_data:
+            task_data['assignee'] = 'unassigned'
+        updated_task = {}
+        for key in taskSchema.keys():
+            if key in task_data:
+                updated_task[key] = task_data[key]
+        result = tasks.update_one({'_id': ObjectId(task_id)}, {'$set': updated_task})
+        if result.modified_count > 0:
+            updated_task = tasks.find_one({'_id': ObjectId(task_id)})
+            updated_task['_id'] = str(updated_task['_id'])
+            redisClient.json().set(task_id , '$', updated_task)
+            return jsonify({'message': 'Task updated !!'}), 200
+        return jsonify({'message': 'Task not found'}), 404
+    
+    # Delete task 
+
+    def delete_task(self, task_id):
+        result = tasks.delete_one({'_id': ObjectId(task_id)})
+        if result.deleted_count > 0:
+            redisClient.delete(task_id)
+            return jsonify({'message': 'Task deleted successfully'}), 200
         return jsonify({'message': 'Task not found'}), 404

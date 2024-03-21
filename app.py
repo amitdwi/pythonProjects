@@ -19,6 +19,14 @@ def get_tasks():
 def get_task(task_id):
     return Tasks().get_task(task_id)
 
+@app.route('/tasks/<task_id>', methods=['PUT'])
+def update_task(task_id):
+    return Tasks().update_task(task_id)
+
+@app.route('/tasks/<task_id>', methods=['DELETE'])
+def delete_task(task_id):
+    return Tasks().delete_task(task_id)
+
 
 if __name__ == "__main__":
     app.run(debug=True)
