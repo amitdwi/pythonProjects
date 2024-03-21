@@ -1,18 +1,20 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, current_app
 
 from db import db
 from cache import redisClient
+from bson.objectid import ObjectId
 
 tasks = db['tasks']
 
 taskSchema = {
-    'email': str,
     'assignee': str,
     'description': str,
     'status': str
 }
 
 class Tasks:
+
+    # Create Task
 
     def create_task(self):
         task_data = request.json
@@ -27,3 +29,27 @@ class Tasks:
         inserted_task['_id'] = str(inserted_task['_id'])
         redisClient.json().set(inserted_task['_id'], '$', inserted_task)
         return jsonify({'msg': "Task created successfully"}), 201
+    
+    # Get All Tasks
+
+    def get_tasks(self):
+        query = {}
+        # Filter by status
+        if request.args.get('status'):
+            query['status'] = request.args.get('status')
+        # Filter by assignee
+        if request.args.get('assignee'):
+            query['assignee'] = request.args.get('assignee')
+    
+        Tasks = tasks.find(query)
+        return [{**task, "_id": str(task["_id"])} for task in Tasks], 200
+    
+    # Get task by ID
+    
+    def get_task(self, task_id):
+        task = redisClient.json().get(task_id)
+        if not task or not task["_id"]:
+            task = tasks.find_one({'_id': ObjectId(task_id)})
+        if task:
+            return {**task, "_id": str(task["_id"])}, 200
+        return jsonify({'message': 'Task not found'}), 404
